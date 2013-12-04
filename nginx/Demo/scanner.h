@@ -11,7 +11,7 @@ class Scanner {
  public:
   Scanner(std::string root = ".") : root_(root) { }
 
-  //@(path="/iou/lxc/delete")  
+  //@(path="/iou/lxc/delete", method="POST")  
   int scan();
 
   std::vector<std::string> get_filelist()
@@ -19,7 +19,7 @@ class Scanner {
     return filelist_;
   }
 
-  //@(path="/iou/lxc/create")
+  //@(path="/iou/lxc/create", method="GET")
   std::string get_root()
   {
     return root_;

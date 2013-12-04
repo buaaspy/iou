@@ -23,5 +23,5 @@ int main()
     std::cout << "URI:" << iter->first << "\tCLASS:" << iter->second << std::endl;
 
   for (; it != uri_method_table.end(); it++)
-    std::cout << "METHOD:" << it->second << std::endl;
+    std::cout << "PATH: " << it->first.first << "  METHOD: " << it->first.second << "  FUNCTION:" << it->second << std::endl;
 }

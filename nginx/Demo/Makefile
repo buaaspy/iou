@@ -1,23 +1,32 @@
-test:test/test_scanner
+CC=g++
 
+.PHONY:test deploy clean reload spawn full-deploy
+
+test:test/test_scanner test/test_reflection
 
 test/test_scanner:test/test_scanner.cpp stringutils.o scanner.o 
-	g++ test/test_scanner.cpp scanner.o stringutils.o -o test/test_scanner
+	${CC} test/test_scanner.cpp scanner.o stringutils.o -o test/test_scanner
+
+test/test_reflection:test/test_reflection.cpp classfactory.h classfactory.o
+	${CC} test/test_reflection.cpp classfactory.o -o test/test_reflection
+
+classfactory.o:classfactory.h classfactory.cpp
+	${CC} -c classfactory.cpp -o classfactory.o
 
 stringutils.o:stringutils.h stringutils.cpp
-	g++ -c stringutils.cpp -o stringutils.o
+	${CC} -c stringutils.cpp -o stringutils.o
 
 scanner:scanner.h scanner.cpp stringutils.o
-	g++ -c scanner.cpp -o scanner.o
+	${CC} -c scanner.cpp -o scanner.o
 
 pipe:pipe.h pipe.cpp os.h
-	g++ -c pipe.cpp -o pipe.o
+	${CC} -c pipe.cpp -o pipe.o
 
 urlparse:urlparse.h urlparse.cpp
-	g++ -c urlparse.cpp -o urlparse.o
+	${CC} -c urlparse.cpp -o urlparse.o
 
 demo:main.cpp urlparse pipe 
-	g++ main.cpp urlparse.o pipe.o -o demo -I./ -L/usr/local/lib -lfcgi -Wl,-R /usr/local/lib -ljsonlib
+	${CC} main.cpp urlparse.o pipe.o -o demo -I./ -L/usr/local/lib -lfcgi -Wl,-R /usr/local/lib -ljsonlib
 
 deploy:clean demo
 	sh script/kill.sh

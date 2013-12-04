@@ -7,14 +7,14 @@
 
 int StringUtils::startwith(std::string str, std::string pattern)
 {
-  if (StringUtils::empty(str) || StringUtils::empty(pattern))
+  if (StringUtils::empty(str) || StringUtils::empty(pattern) || str.size() < pattern.size())
     return 0;
   return str.compare(0, pattern.size(), pattern) == 0;
 }
 
 int StringUtils::endwith(std::string str, std::string pattern)
 {
-  if (StringUtils::empty(str) || StringUtils::empty(pattern)) \
+  if (StringUtils::empty(str) || StringUtils::empty(pattern) || str.size() < pattern.size()) 
     return 0;
   return str.compare(str.size() - pattern.size(), pattern.size(), pattern) == 0;
 }
@@ -22,6 +22,11 @@ int StringUtils::endwith(std::string str, std::string pattern)
 int StringUtils::empty(std::string str)
 {
   return str.empty();
+}
+
+int StringUtils::equal(std::string lstr, std::string rstr)
+{
+  return lstr == rstr;
 }
 
 std::string StringUtils::ltrim(std::string str)
@@ -49,6 +54,20 @@ std::string StringUtils::extractparen(std::string str)
   
   lpos = str.find_first_of('(');
   rpos = str.find_last_of(')');
+  if (lpos == std::string::npos
+      || rpos == std::string::npos
+      || lpos >= rpos + 1)
+    return "";
+
+  return str.substr(lpos + 1, rpos - lpos - 1);
+}
+
+std::string StringUtils::extractquote(std::string str)
+{
+  std::string::size_type lpos, rpos;
+  
+  lpos = str.find_first_of('"');
+  rpos = str.find_last_of('"');
   if (lpos == std::string::npos
       || rpos == std::string::npos
       || lpos >= rpos + 1)

@@ -11,23 +11,35 @@
 #include "stringutils.h"
 #include "scanner.h"
 
+static std::string extract_function_name(std::string raw)
+{
+  std::string::size_type pos;
+  
+  pos =raw.find_first_of('(');
+  if (pos == 0 || pos == std::string::npos)
+    return "";
+
+  return raw.substr(0, pos);
+}
+
 int Scanner::scan()
 {
   enum state {JUST_ENTER, CLASS_SCOPE, METHOD_SCOPE, DECLARE_SCOPE};
   DIR *dp;
   struct dirent *dirp;
   struct stat buf;
-  std::string tmp;
+  std::string dir, tmp;
+  std::string path = root_;
   std::queue<std::string> que;
   int status;
 
   // generate filelist
   que.push(root_);
   while (!que.empty()) {
-    tmp = que.front();
+    dir = que.front();
     que.pop();
 
-    if((dp = opendir(tmp.c_str())) == NULL)
+    if((dp = opendir(dir.c_str())) == NULL)
       return 0;
 
     while((dirp = readdir(dp)) != NULL) {
@@ -36,12 +48,13 @@ int Scanner::scan()
       if (tmp == "." || tmp == ".." || StringUtils::startwith(tmp, "."))
 	continue;
 
+      tmp = dir + "/" + tmp;
       status = stat(tmp.c_str(), &buf);
       if (status >= 0 && S_ISDIR(buf.st_mode)) {
 	que.push(tmp);
       } else if (StringUtils::endwith(tmp, ".h") 
 		 || StringUtils::endwith(tmp, ".cpp")) {
-	filelist_.push_back(tmp.assign(dirp->d_name));
+	filelist_.push_back(tmp);
       }
     }
 
@@ -71,31 +84,37 @@ int Scanner::scan()
 	s = CLASS_SCOPE;
       }
 
-      if (StringUtils::startwith(StringUtils::ltrim(line), "class")
+      if (StringUtils::startwith(StringUtils::ltrim(line), "DECLARE_DYN_CLASS")
 	  && s == CLASS_SCOPE) {
-	class_name = StringUtils::split(line, " ").at(1);
-	uri_class_table_[class_uri] = class_name;
+	class_name = StringUtils::extractparen(StringUtils::split(line, " ").at(0));
+	uri_class_table_[StringUtils::extractquote(class_uri)] = class_name;
 	s = METHOD_SCOPE;
       }
       
       if (StringUtils::startwith(StringUtils::ltrim(line), "//@")
 	  && s == METHOD_SCOPE) {
-	method_uri = StringUtils::split(StringUtils::split(line, ",").at(0), "=").at(1);
+	tmp = StringUtils::extractparen(line);
+	method_uri = StringUtils::split(StringUtils::split(tmp, ",").at(0), "=").at(1);
 	if (StringUtils::split(line, ",").size() < 2)
 	  method = "";
 	else
-	  method = StringUtils::split(StringUtils::split(line, ",").at(1), "=").at(1);
+	  method = StringUtils::split(StringUtils::split(tmp, ",").at(1), "=").at(1);
 
 	s = DECLARE_SCOPE;
       }
 
       if (!StringUtils::startwith(StringUtils::ltrim(line), "//@") 
 	  && s == DECLARE_SCOPE) {
-	method_name = StringUtils::split(StringUtils::trim(line), " ").at(1);
-	uri_method_table_.insert(std::make_pair(std::make_pair(method_uri, method), method_name));
+	method_name = extract_function_name(StringUtils::split(StringUtils::trim(line), " ").at(1));
+	uri_method_table_.insert(std::make_pair(std::make_pair(StringUtils::extractquote(method_uri), 
+							       StringUtils::extractquote(method)), 
+						method_name));
 	s = METHOD_SCOPE;
       }
-       
+
+      if (StringUtils::equal(StringUtils::trim(line), "};")
+	  && s == METHOD_SCOPE) 
+	s = JUST_ENTER;
     }
     
     stream.close();
